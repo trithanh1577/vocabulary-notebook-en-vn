@@ -1,100 +1,108 @@
 # Vocabulary Notebook EN–VI
 
-Ứng dụng web nhỏ để lưu từ vựng tiếng Anh, nghĩa tiếng Việt và lịch sử ôn tập. Dự án được làm theo các mốc đầu của môn 72ITDS30103; giai đoạn hiện tại tập trung vào CRUD, Docker/Compose và chuẩn bị triển khai HTTPS. Tính năng AI tạo câu ví dụ và ghi chú cách dùng nằm ở mốc sau.
+Ứng dụng web quản lý từ vựng Anh–Việt và lịch sử ôn tập, được thực hiện cho môn **72ITDS30103 – Software Development Platforms**.
 
-## Chạy trong VS Code
+## Tổng quan dự án
 
-### Cần có
+Vocabulary Notebook EN–VI giúp người học xây dựng sổ tay từ vựng cá nhân. Người dùng có thể thêm từ tiếng Anh, nghĩa tiếng Việt, từ loại và ghi chú; sau đó lưu kết quả mỗi lần ôn để theo dõi quá trình học.
 
-- Visual Studio Code và Git.
-- Docker Desktop đã mở và báo Docker Engine đang chạy.
-- VS Code extensions được đề xuất: Python, Docker, Dev Containers, GitHub Pull Requests and Issues.
+Dự án hiện đã hoàn thành các mốc đến hết tuần 5:
 
-Có thể mở thư mục dự án trong VS Code rồi chạy **Terminal → Run Task → Start local stack**, hoặc chạy lệnh sau trong terminal tích hợp:
+- Quản lý từ vựng: xem danh sách, tìm kiếm, thêm, sửa và xóa.
+- Quản lý lịch sử ôn tập cho từng từ.
+- Chạy ứng dụng và PostgreSQL local bằng Docker Compose.
+- Triển khai ứng dụng bằng Docker trên Render với HTTPS.
+- Lưu dữ liệu production trên Supabase PostgreSQL.
+- Tự động triển khai lại website khi có commit mới trên branch `main`.
+
+Tính năng AI tạo câu ví dụ và ghi chú cách dùng sẽ được phát triển ở mốc tiếp theo của môn học.
+
+## Thành viên
+
+| Họ và tên | Mã sinh viên |
+| --- | --- |
+| Nguyễn Thành Trí | 2474802010400 |
+| Phạm Thị Khánh Ngân | 2474802016786 |
+
+## Website và liên kết
+
+| Nội dung | Liên kết |
+| --- | --- |
+| Website đang hoạt động | [vocabulary-notebook-en-vn.onrender.com](https://vocabulary-notebook-en-vn.onrender.com) |
+| Kiểm tra trạng thái dịch vụ | [Health check](https://vocabulary-notebook-en-vn.onrender.com/health/) |
+| GitHub repository | [trithanh1577/vocabulary-notebook-en-vn](https://github.com/trithanh1577/vocabulary-notebook-en-vn) |
+| Pull requests | [GitHub Pull Requests](https://github.com/trithanh1577/vocabulary-notebook-en-vn/pulls) |
+| Render Dashboard | [dashboard.render.com](https://dashboard.render.com/) |
+| Supabase Dashboard | [supabase.com/dashboard](https://supabase.com/dashboard) |
+| Website local | [localhost:8000](http://localhost:8000) |
+
+> Render sử dụng gói miễn phí nên website có thể mất một lúc để khởi động lại sau thời gian không có truy cập.
+
+## Công nghệ sử dụng
+
+- Python và Django.
+- HTML và CSS.
+- PostgreSQL.
+- Docker và Docker Compose.
+- GitHub để quản lý mã nguồn và Pull Request.
+- Render để triển khai web service HTTPS.
+- Supabase để cung cấp PostgreSQL trên cloud.
+- Visual Studio Code để phát triển và chạy dự án.
+
+## Chạy dự án trên Visual Studio Code
+
+### Yêu cầu
+
+- Visual Studio Code.
+- Git.
+- Docker Desktop đang chạy.
+
+Mở thư mục dự án trong Visual Studio Code, sau đó chạy trong terminal:
 
 ```powershell
 docker compose up --build
 ```
 
-Mở <http://localhost:8000>. Khi chạy lần đầu, Docker cần tải image Python và PostgreSQL. Compose tự tạo database local, áp dụng migrations, rồi chạy web app. Dữ liệu database được giữ trong volume `postgres_data` qua các lần dừng/mở lại.
+Truy cập [http://localhost:8000](http://localhost:8000). Docker Compose sẽ tự khởi động Django, PostgreSQL và áp dụng migrations.
 
-Muốn mở Python code bên trong container, dùng `Ctrl+Shift+P` → **Dev Containers: Reopen in Container**. Trong VS Code, chọn **Terminal → Run Task → Follow web logs** để xem log.
-
-Để dừng app, nhấn `Ctrl+C`, hoặc chạy:
+Để dừng ứng dụng:
 
 ```powershell
 docker compose down
 ```
 
-Để xóa cả dữ liệu PostgreSQL local (thao tác này không thể khôi phục dữ liệu đã xóa):
-
-```powershell
-docker compose down --volumes
-```
-
-## Những gì có trong bản này
-
-- Danh sách, tìm kiếm, thêm, sửa và xóa từ vựng.
-- Chi tiết một từ và lịch sử ôn tập; thêm kết quả ôn tập và xóa bản ghi.
-- Dockerfile, `.dockerignore` và Compose gồm Django/PostgreSQL để chạy từ clone sạch bằng một lệnh.
-- Cấu hình Render Blueprint và biến môi trường để chuẩn bị URL HTTPS; database production dự kiến là Supabase PostgreSQL.
-- Django admin ở `/admin/` (tạo tài khoản quản trị bằng `python manage.py createsuperuser` khi cần).
-
-## Cấu hình và secrets
-
-Compose chạy được mà không cần file `.env`, dùng thông tin mặc định chỉ dành cho môi trường local. Nếu muốn tùy chỉnh, copy `.env.example` thành `.env`. `.env` được Git bỏ qua.
-
-Trên Render, đặt `DATABASE_URL` bằng connection string PostgreSQL của Supabase, giữ `DEBUG=0`, và sinh một `SECRET_KEY` riêng trong phần Environment. Không commit `.env`, connection string hay API key. Chưa cần API key ở giai đoạn này vì tính năng AI thuộc mốc sau.
-
-## Chuẩn bị HTTPS trên Render + Supabase
-
-1. Đưa repository của nhóm lên GitHub và kết nối repository đó với Render.
-2. Tạo project PostgreSQL trên Supabase; lấy connection string PostgreSQL có SSL.
-3. Tạo Web Service từ Blueprint `render.yaml`. Render đọc Dockerfile và cấp URL HTTPS `onrender.com`.
-4. Điền `DATABASE_URL` trong Render Dashboard. `SECRET_KEY` được Blueprint tạo tự động; giữ `DEBUG=0`.
-5. Mở URL Render và kiểm tra trang chính. Free Web Service có thể ngủ khi không có truy cập; mở URL trước buổi demo.
-
-Blueprint không chứa credential thật. Việc tạo dịch vụ cloud cần đăng nhập vào tài khoản GitHub, Render và Supabase của nhóm. Không thêm thẻ thanh toán nếu nền tảng yêu cầu payment method; kiểm tra fallback theo yêu cầu môn học.
-
 ## Biến môi trường
 
-| Tên | Local Compose | Production |
-| --- | --- | --- |
-| `DATABASE_URL` | Compose nối đến service `db` | Supabase PostgreSQL connection string |
-| `SECRET_KEY` | Giá trị mặc định dùng riêng cho dev hoặc `.env` | Secret riêng do Render sinh |
-| `DEBUG` | `1` | `0` |
-| `ALLOWED_HOSTS` | `localhost,127.0.0.1` | Host Render được thêm tự động; có thể cấu hình thêm |
+| Biến | Mục đích |
+| --- | --- |
+| `DATABASE_URL` | Chuỗi kết nối PostgreSQL local hoặc Supabase |
+| `SECRET_KEY` | Khóa bí mật của Django |
+| `DEBUG` | Bật chế độ phát triển ở local, tắt trên production |
+| `ALLOWED_HOSTS` | Danh sách host được Django cho phép |
 
-## Cấu trúc chính
+Không commit file `.env`, mật khẩu database, connection string hoặc API key lên GitHub.
+
+## Cấu trúc dự án
 
 ```text
-config/                 Django settings và URL gốc
-vocabulary/             models, forms, views, migrations và templates
-.devcontainer/          Mở môi trường Compose từ VS Code
-.vscode/                Extensions và tasks dùng trong VS Code
-Dockerfile              Image ứng dụng
-compose.yaml            App + PostgreSQL cho phát triển local
-render.yaml             Render Blueprint cho dịch vụ web
+config/                     Cấu hình chung của Django
+vocabulary/                 Ứng dụng quản lý từ vựng và lịch sử ôn tập
+vocabulary/templates/       Giao diện HTML
+vocabulary/static/          CSS và tài nguyên giao diện
+.devcontainer/              Cấu hình Dev Container cho VS Code
+.github/                    Mẫu Pull Request và cấu hình GitHub
+.vscode/                    Extensions và tasks cho Visual Studio Code
+Dockerfile                  Cấu hình image của ứng dụng
+compose.yaml                Django và PostgreSQL cho môi trường local
+render.yaml                 Blueprint triển khai trên Render
+requirements.txt            Các thư viện Python
 ```
 
-## Tiến độ theo mốc môn học
+## Quy trình cập nhật website
 
-- Tuần 2: chuẩn bị dự án để đưa lên repo nhóm; bảo vệ `main`, pull request và phân quyền cần thực hiện trên GitHub của nhóm.
-- Tuần 3: có Dockerfile và `.dockerignore`.
-- Tuần 4: Compose khởi chạy app và database bằng một lệnh.
-- Tuần 5: có cấu hình triển khai Render và kết nối Supabase; URL HTTPS thật cần được tạo trong tài khoản cloud của nhóm.
-
-### Quy ước làm việc nhóm trên GitHub
-
-Khi repository nhóm đã được clone và kết nối:
-
-1. Tạo branch cho một thay đổi, ví dụ `feature/add-vocabulary-crud`.
-2. Commit thay đổi trên branch đó và push lên GitHub.
-3. Mở pull request vào `main`, giải thích thay đổi và nhờ thành viên còn lại review.
-4. Merge sau khi được review. Không push trực tiếp lên `main`.
-
-Trong Settings → Branches của repository, bật rule cho `main` để yêu cầu pull request và tối thiểu một approval. Việc bật rule cần quyền quản trị repository.
-
-## Công nghệ
-
-Python, Django, PostgreSQL, Docker Compose, Render, Supabase, HTML/CSS và GitHub.
+1. Tạo một branch mới từ `main`.
+2. Thực hiện thay đổi và commit trên branch đó.
+3. Push branch lên GitHub và tạo Pull Request vào `main`.
+4. Thành viên còn lại review và approve Pull Request.
+5. Merge Pull Request vào `main`.
+6. Render tự động build và cập nhật website từ branch `main`.
