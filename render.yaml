@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: vocabulary-notebook-en-vn
+    runtime: docker
+    plan: free
+    healthCheckPath: /health/
+    envVars:
+      - key: DEBUG
+        value: "0"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false
+      - key: ALLOWED_HOSTS
+        value: .onrender.com

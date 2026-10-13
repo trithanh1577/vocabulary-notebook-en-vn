@@ -1,0 +1,19 @@
+{% extends 'vocabulary/base.html' %}
+{% block title %}{% if is_edit %}Sửa từ{% else %}Thêm từ mới{% endif %}{% endblock %}
+{% block content %}
+<section class="form-page">
+  <a class="back-link" href="{% if is_edit %}{% url 'word_detail' word.pk %}{% else %}{% url 'word_list' %}{% endif %}">← Quay lại</a>
+  <div class="form-heading"><p class="eyebrow muted">{% if is_edit %}CHỈNH SỬA{% else %}THÊM VÀO SỔ{% endif %}</p><h1>{% if is_edit %}Cập nhật từ vựng{% else %}Một từ mới đang chờ bạn.{% endif %}</h1><p>Ghi lại từ, nghĩa và điều bạn muốn nhớ.</p></div>
+  <form method="post" class="form-card">
+    {% csrf_token %}
+    {% for field in form %}
+      <div class="field-group">
+        <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %}<span class="required-mark">*</span>{% endif %}</label>
+        {{ field }}
+        {% if field.errors %}<div class="field-error">{{ field.errors|striptags }}</div>{% endif %}
+      </div>
+    {% endfor %}
+    <div class="form-actions"><a class="button button-quiet" href="{% if is_edit %}{% url 'word_detail' word.pk %}{% else %}{% url 'word_list' %}{% endif %}">Hủy</a><button class="button button-primary" type="submit">{% if is_edit %}Lưu thay đổi{% else %}Lưu từ vựng{% endif %}<span aria-hidden="true">→</span></button></div>
+  </form>
+</section>
+{% endblock %}

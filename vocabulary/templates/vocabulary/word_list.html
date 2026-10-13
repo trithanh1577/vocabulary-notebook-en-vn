@@ -1,0 +1,51 @@
+{% extends 'vocabulary/base.html' %}
+{% block title %}Từ của tôi{% endblock %}
+{% block content %}
+<section class="hero">
+  <div class="hero-copy">
+    <p class="eyebrow"><span class="eyebrow-dot"></span> GÓC HỌC TẬP CỦA BẠN</p>
+    <h1>Mỗi ngày một từ,<br><em>mỗi từ một câu chuyện.</em></h1>
+    <p class="hero-subtitle">Lưu lại điều mới học. Ôn tập một chút. Tiến bộ theo cách của riêng bạn.</p>
+  </div>
+  <div class="hero-illustration" aria-hidden="true">
+    <div class="sun"></div><div class="leaf leaf-one"></div><div class="leaf leaf-two"></div>
+    <div class="book"><span></span><span></span><span></span></div>
+    <div class="spark spark-one">✳</div><div class="spark spark-two">·</div>
+  </div>
+</section>
+
+<section class="content-section">
+  <div class="section-heading">
+    <div><p class="eyebrow muted">BỘ SƯU TẬP</p><h2>Từ vựng <span class="count-pill">{{ total_words }}</span></h2></div>
+    <form class="search-form" method="get" role="search">
+      <label class="sr-only" for="word-search">Tìm từ</label>
+      <span class="search-icon" aria-hidden="true">⌕</span>
+      <input id="word-search" name="q" value="{{ query }}" placeholder="Tìm từ hoặc nghĩa...">
+      {% if query %}<a class="clear-search" href="{% url 'word_list' %}" aria-label="Xóa tìm kiếm">×</a>{% endif %}
+    </form>
+  </div>
+
+  {% if words %}
+    <div class="word-grid">
+      {% for word in words %}
+        <article class="word-card">
+          <div class="card-topline"><span class="word-index">{{ forloop.counter|stringformat:"02d" }}</span><a class="card-edit" href="{% url 'word_update' word.pk %}" aria-label="Sửa {{ word.word }}">↗</a></div>
+          <a class="word-card-link" href="{% url 'word_detail' word.pk %}">
+            <h3>{{ word.word }}</h3>
+            {% if word.part_of_speech %}<span class="part-of-speech">{{ word.part_of_speech }}</span>{% endif %}
+            <p class="word-meaning">{{ word.meaning_vi|truncatechars:110 }}</p>
+          </a>
+          <div class="card-bottom"><span>{{ word.review_logs.count }} lần ôn</span><span class="card-arrow" aria-hidden="true">→</span></div>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <div class="empty-icon" aria-hidden="true">✳</div>
+      {% if query %}<h3>Chưa tìm thấy từ phù hợp</h3><p>Thử tìm bằng từ tiếng Anh hoặc nghĩa tiếng Việt khác nhé.</p>
+      {% else %}<h3>Trang vở vẫn còn trống</h3><p>Thêm từ đầu tiên để bắt đầu xây dựng cuốn sổ của bạn.</p>{% endif %}
+      <a class="button button-primary" href="{% url 'word_create' %}">＋ Thêm từ đầu tiên</a>
+    </div>
+  {% endif %}
+</section>
+{% endblock %}

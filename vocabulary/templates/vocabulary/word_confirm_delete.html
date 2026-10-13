@@ -1,0 +1,5 @@
+{% extends 'vocabulary/base.html' %}
+{% block title %}Xóa từ{% endblock %}
+{% block content %}
+<section class="form-page"><a class="back-link" href="{% url 'word_detail' word.pk %}">← Quay lại</a><div class="form-heading"><p class="eyebrow muted">XÁC NHẬN</p><h1>Xóa “{{ word.word }}”?</h1><p>Toàn bộ lịch sử ôn tập của từ này cũng sẽ bị xóa.</p></div><form method="post" class="form-card">{% csrf_token %}<div class="form-actions"><a class="button button-quiet" href="{% url 'word_detail' word.pk %}">Giữ lại</a><button class="button button-danger" type="submit">Xóa từ này</button></div></form></section>
+{% endblock %}

@@ -1,0 +1,13 @@
+{% extends 'vocabulary/base.html' %}
+{% block title %}Lịch sử ôn{% endblock %}
+{% block content %}
+<section class="content-section review-history-page">
+  <div class="section-heading"><div><p class="eyebrow muted">NHÌN LẠI HÀNH TRÌNH</p><h1>Lịch sử ôn tập</h1><p class="section-description">Mỗi lần mở lại một từ đều là một bước tiến.</p></div><form class="search-form" method="get" role="search"><label class="sr-only" for="review-search">Tìm trong lịch sử</label><span class="search-icon" aria-hidden="true">⌕</span><input id="review-search" name="q" value="{{ query }}" placeholder="Tìm từ đã ôn..."></form></div>
+  {% if reviews %}
+    <div class="review-table-wrap"><table class="review-table"><thead><tr><th>TỪ VỰNG</th><th>KẾT QUẢ</th><th>GHI CHÚ</th><th>THỜI GIAN</th><th></th></tr></thead><tbody>
+    {% for review in reviews %}<tr><td><a class="table-word" href="{% url 'word_detail' review.word.pk %}">{{ review.word.word }}</a><span class="table-meaning">{{ review.word.meaning_vi|truncatechars:55 }}</span></td><td><span class="result-badge {% if review.result == 'remembered' %}result-good{% else %}result-practice{% endif %}">{{ review.get_result_display }}</span></td><td>{{ review.note|default:"—" }}</td><td class="table-date">{{ review.reviewed_at|date:"d/m/Y · H:i" }}</td><td><form method="post" action="{% url 'review_delete' review.pk %}">{% csrf_token %}<button class="icon-button" type="submit" aria-label="Xóa bản ghi">×</button></form></td></tr>{% endfor %}
+    </tbody></table></div>
+    {% if reviews|length == 100 %}<p class="table-footnote">Đang hiển thị 100 lần ôn gần đây nhất.</p>{% endif %}
+  {% else %}<div class="empty-state"><div class="empty-icon" aria-hidden="true">✳</div><h3>{% if query %}Chưa tìm thấy lần ôn phù hợp{% else %}Chưa có lịch sử ôn tập{% endif %}</h3><p>Thêm lần ôn từ trang chi tiết của một từ vựng.</p><a class="button button-primary" href="{% url 'word_list' %}">Xem sổ từ vựng</a></div>{% endif %}
+</section>
+{% endblock %}
