@@ -1,0 +1,39 @@
+{% load static %}
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f6f2">
+  <title>{% block title %}Sổ từ vựng{% endblock %} · Wordgarden</title>
+  <link rel="stylesheet" href="{% static 'vocabulary/styles.css' %}">
+</head>
+<body>
+  <div class="site-shell">
+    <header class="topbar">
+      <a class="brand" href="{% url 'word_list' %}" aria-label="Wordgarden — trang chủ">
+        <span class="brand-mark">w.</span>
+        <span>wordgarden<span class="brand-period">.</span></span>
+      </a>
+      <nav class="main-nav" aria-label="Điều hướng chính">
+        <a href="{% url 'word_list' %}" class="{% if request.resolver_match.url_name == 'word_list' %}active{% endif %}">Từ của tôi</a>
+        <a href="{% url 'review_list' %}" class="{% if request.resolver_match.url_name == 'review_list' %}active{% endif %}">Lịch sử ôn</a>
+      </nav>
+      <a class="topbar-add" href="{% url 'word_create' %}"><span aria-hidden="true">＋</span> Thêm từ</a>
+    </header>
+
+    {% if messages %}
+      <div class="messages" aria-live="polite">
+        {% for message in messages %}<div class="message {{ message.tags }}">{{ message }}</div>{% endfor %}
+      </div>
+    {% endif %}
+
+    <main>{% block content %}{% endblock %}</main>
+
+    <footer class="footer">
+      <span>Gom từng từ nhỏ, lớn dần thành vốn từ.</span>
+      <span>EN <span class="footer-dot">·</span> VI</span>
+    </footer>
+  </div>
+</body>
+</html>

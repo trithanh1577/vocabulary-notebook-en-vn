@@ -1,0 +1,38 @@
+{% extends 'vocabulary/base.html' %}
+{% block title %}{{ word.word }}{% endblock %}
+{% block content %}
+<section class="detail-page">
+  <a class="back-link" href="{% url 'word_list' %}">← Tất cả từ</a>
+  <div class="detail-layout">
+    <article class="detail-main">
+      <div class="detail-label"><span class="eyebrow-dot"></span> TỪ VỰNG CỦA BẠN</div>
+      <div class="detail-title-row"><div><h1>{{ word.word }}</h1>{% if word.part_of_speech %}<span class="part-of-speech">{{ word.part_of_speech }}</span>{% endif %}</div><a class="button button-outline" href="{% url 'word_update' word.pk %}">Sửa từ</a></div>
+      <div class="meaning-block"><p class="detail-caption">NGHĨA TIẾNG VIỆT</p><p class="meaning-text">{{ word.meaning_vi|linebreaksbr }}</p></div>
+      {% if word.example_sentence or word.usage_note %}
+        <div class="later-feature"><p class="detail-caption">TRONG NGỮ CẢNH</p>{% if word.example_sentence %}<p>{{ word.example_sentence }}</p>{% endif %}{% if word.usage_note %}<p class="soft-note">{{ word.usage_note }}</p>{% endif %}</div>
+      {% else %}<div class="later-feature"><p class="detail-caption">GỢI Ý HỌC TẬP</p><p>Câu ví dụ và ghi chú cách dùng sẽ được bổ sung ở giai đoạn tính năng AI.</p></div>{% endif %}
+      {% if word.notes %}<div class="notes-block"><p class="detail-caption">GHI CHÚ RIÊNG</p><p>{{ word.notes|linebreaksbr }}</p></div>{% endif %}
+      <div class="detail-meta"><span>Thêm ngày {{ word.created_at|date:"d/m/Y" }}</span><span>·</span><span>{{ word.review_logs.count }} lần ôn tập</span></div>
+    </article>
+
+    <aside class="review-panel">
+      <div class="review-panel-head"><p class="eyebrow muted">ÔN TẬP</p><h2>Ghi lại lần học</h2><p>Một dấu mốc nhỏ giúp bạn nhìn thấy tiến bộ.</p></div>
+      <form method="post" action="{% url 'review_create' word.pk %}" class="review-form">
+        {% csrf_token %}
+        <label for="id_result">Bạn nhớ từ này không?</label>
+        {{ review_form.result }}
+        <label for="id_note">Ghi chú <span>(tùy chọn)</span></label>
+        {{ review_form.note }}
+        <button class="button button-primary button-full" type="submit">Lưu lần ôn <span aria-hidden="true">→</span></button>
+      </form>
+      <div class="history-list">
+        <div class="history-heading"><h3>Lịch sử gần đây</h3><a href="{% url 'review_list' %}?q={{ word.word|urlencode }}">Tất cả →</a></div>
+        {% for review in word.review_logs.all|slice:":5" %}
+          <div class="history-item"><span class="history-mark {% if review.result == 'remembered' %}good{% else %}practice{% endif %}"></span><div class="history-copy"><strong>{{ review.get_result_display }}</strong>{% if review.note %}<span>{{ review.note }}</span>{% endif %}<small>{{ review.reviewed_at|date:"d/m/Y · H:i" }}</small></div><form method="post" action="{% url 'review_delete' review.pk %}">{% csrf_token %}<button class="icon-button" type="submit" aria-label="Xóa lần ôn">×</button></form></div>
+        {% empty %}<p class="history-empty">Chưa có lần ôn nào.</p>{% endfor %}
+      </div>
+      <form method="post" action="{% url 'word_delete' word.pk %}" class="delete-word-form" onsubmit="return confirm('Xóa từ này và toàn bộ lịch sử ôn tập?')">{% csrf_token %}<button type="submit">Xóa từ vựng</button></form>
+    </aside>
+  </div>
+</section>
+{% endblock %}
