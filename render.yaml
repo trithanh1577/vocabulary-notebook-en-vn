@@ -4,6 +4,7 @@ services:
     runtime: docker
     plan: free
     healthCheckPath: /health/
+    autoDeployTrigger: checksPass
     envVars:
       - key: DEBUG
         value: "0"
