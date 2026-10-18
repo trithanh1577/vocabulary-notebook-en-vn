@@ -37,6 +37,12 @@ jobs:
           SECRET_KEY: ci-only-secret-key
           DEBUG: "1"
 
+      - name: Collect static files
+        run: python manage.py collectstatic --noinput
+        env:
+          SECRET_KEY: ci-only-secret-key
+          DEBUG: "1"
+
       - name: Run tests
         run: python manage.py test
         env:
