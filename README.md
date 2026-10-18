@@ -106,3 +106,9 @@ requirements.txt            Các thư viện Python
 4. Thành viên còn lại review và approve Pull Request.
 5. Merge Pull Request vào `main`.
 6. Render tự động build và cập nhật website từ branch `main`.
+
+## CI/CD (tuần 6)
+
+GitHub Actions chạy tự động khi tạo Pull Request vào `main` và khi có commit mới trên `main`. Quy trình cài thư viện, kiểm tra cấu hình Django, kiểm tra migrations và chạy bộ kiểm thử.
+
+Render chỉ bắt đầu triển khai commit trên `main` sau khi các bước kiểm tra CI hoàn tất thành công. Vì vậy, hãy chờ GitHub Actions báo thành công trước khi merge Pull Request.
