@@ -79,8 +79,16 @@ docker compose down
 | `SECRET_KEY` | Khóa bí mật của Django |
 | `DEBUG` | Bật chế độ phát triển ở local, tắt trên production |
 | `ALLOWED_HOSTS` | Danh sách host được Django cho phép |
+| `GEMINI_API_KEY` | API key Gemini, chỉ đọc ở phía máy chủ |
+| `GEMINI_MODEL` | Mô hình Gemini; mặc định `gemini-3.5-flash-lite` |
 
 Không commit file `.env`, mật khẩu database, connection string hoặc API key lên GitHub.
+
+### Tích hợp AI và bài tập
+
+Trong `.env` ở máy local, đặt `GEMINI_API_KEY` bằng key mới tạo từ Google AI Studio. Trên Render, thêm cùng biến trong **Environment** của web service. Không gửi key qua chat, đưa vào ảnh chụp hoặc viết vào mã nguồn.
+
+Giao diện **Bài tập / Ôn tập** có ba chế độ: trắc nghiệm từ trong bộ sưu tập, học từ mới do Gemini tạo (chọn sai sẽ tự lưu từ và nội dung gợi ý), và ôn các từ có kết quả gần nhất là “Cần ôn thêm”. Trang chi tiết từ có nút để Gemini tạo câu ví dụ cùng ghi chú cách dùng. Nếu Gemini lỗi hoặc chưa được cấu hình, ứng dụng báo thông báo và các trang khác vẫn dùng được.
 
 ## Cấu trúc dự án
 

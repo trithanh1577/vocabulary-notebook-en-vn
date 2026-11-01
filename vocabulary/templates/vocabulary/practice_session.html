@@ -1,0 +1,45 @@
+{% extends 'vocabulary/base.html' %}
+{% block title %}{{ mode_label }}{% endblock %}
+{% block content %}
+<section class="practice-session-page">
+  <a class="back-link" href="{% url 'practice_home' %}">← Tất cả bài tập</a>
+  <div class="practice-session-card">
+    <p class="eyebrow muted">{{ mode_label|upper }}</p>
+
+    {% if is_complete %}
+      <div class="practice-complete">
+        <div class="empty-icon">✓</div>
+        <h1>Hoàn thành lượt học!</h1>
+        <p>Bạn đã trả lời {{ total_questions }} câu. Có thể xem lịch sử hoặc bắt đầu một lượt mới.</p>
+        <div class="practice-complete-actions">
+          <a class="button button-outline" href="{% url 'review_list' %}">Xem lịch sử ôn</a>
+          <a class="button button-primary" href="{% url 'practice_session' mode %}?restart=1">Làm lượt mới →</a>
+        </div>
+      </div>
+    {% else %}
+      <div class="quiz-progress-row"><span>Câu {{ question_number }} / {{ total_questions }}</span><span>{{ progress_percent }}%</span></div>
+      <div class="quiz-progress-track"><div class="quiz-progress-bar" style="width: {{ progress_percent }}%"></div></div>
+      <div class="quiz-question">
+        <p>{% if is_new_vocabulary %}Bạn biết từ này có nghĩa gì?{% else %}Chọn nghĩa tiếng Việt đúng{% endif %}</p>
+        <h1>{{ question_word }}</h1>
+        {% if part_of_speech %}<span class="part-of-speech">{{ part_of_speech }}</span>{% endif %}
+      </div>
+      <form method="post" class="quiz-answer-form">
+        {% csrf_token %}
+        <input type="hidden" name="question_token" value="{{ question_token }}">
+        <div class="quiz-options">
+          {% for option in options %}
+            <label class="quiz-option" for="answer-{{ forloop.counter }}">
+              <input id="answer-{{ forloop.counter }}" type="radio" name="answer" value="{{ option.value }}" required>
+              <span class="quiz-option-marker">{{ forloop.counter }}</span>
+              <span>{{ option.label }}</span>
+            </label>
+          {% endfor %}
+        </div>
+        <button class="button button-primary button-full" type="submit">Kiểm tra đáp án <span aria-hidden="true">→</span></button>
+      </form>
+      {% if is_new_vocabulary %}<p class="quiz-hint">Nếu chọn sai, từ mới cùng câu ví dụ sẽ tự được lưu vào sổ.</p>{% endif %}
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

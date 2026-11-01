@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from django.test import TestCase
 from django.urls import reverse
 
@@ -64,3 +66,104 @@ class VocabularyPagesTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), {"status": "ok"})
+
+
+class PracticeModeTests(TestCase):
+    def setUp(self):
+        self.word = Word.objects.create(
+            word="careful",
+            part_of_speech="adjective",
+            meaning_vi="cẩn thận",
+        )
+
+    def test_collection_quiz_records_a_correct_answer(self):
+        response = self.client.get(
+            reverse("practice_session", kwargs={"mode": "collection"}),
+            {"restart": "1"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        state = self.client.session["practice_collection"]
+        answer = next(
+            option for option in state["options"] if option["value"] == str(self.word.pk)
+        )
+        response = self.client.post(
+            reverse("practice_session", kwargs={"mode": "collection"}),
+            {"answer": answer["value"], "question_token": state["token"]},
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(
+            ReviewLog.objects.filter(
+                word=self.word, result=ReviewLog.Result.REMEMBERED
+            ).exists()
+        )
+
+    def test_unlearned_count_uses_the_latest_review(self):
+        ReviewLog.objects.create(word=self.word, result=ReviewLog.Result.PRACTICE)
+        ReviewLog.objects.create(word=self.word, result=ReviewLog.Result.REMEMBERED)
+
+        response = self.client.get(reverse("practice_home"))
+
+        self.assertContains(response, "0 từ cần ôn")
+
+    @patch("vocabulary.views.generate_new_vocabulary")
+    def test_unknown_new_word_is_added_to_collection(self, generate_words):
+        generate_words.return_value = [
+            {
+                "word": "ponder",
+                "part_of_speech": "verb",
+                "meaning_vi": "suy ngẫm",
+                "example_sentence": "She paused to ponder the question.",
+                "usage_note": "Thường dùng khi suy nghĩ kỹ về một việc.",
+            },
+            {
+                "word": "gather",
+                "part_of_speech": "verb",
+                "meaning_vi": "thu thập",
+                "example_sentence": "They gather information before deciding.",
+                "usage_note": "Có thể dùng cho đồ vật hoặc thông tin.",
+            },
+        ]
+
+        response = self.client.get(
+            reverse("practice_session", kwargs={"mode": "new"}),
+            {"restart": "1"},
+        )
+        self.assertEqual(response.status_code, 200)
+        state = self.client.session["practice_new"]
+        wrong_answer = next(option for option in state["options"] if not option["correct"])
+
+        response = self.client.post(
+            reverse("practice_session", kwargs={"mode": "new"}),
+            {"answer": wrong_answer["value"], "question_token": state["token"]},
+        )
+
+        self.assertEqual(response.status_code, 302)
+        new_word = Word.objects.get(word="ponder")
+        self.assertEqual(new_word.meaning_vi, "suy ngẫm")
+        self.assertTrue(new_word.example_sentence)
+        self.assertTrue(
+            ReviewLog.objects.filter(
+                word=new_word, result=ReviewLog.Result.PRACTICE
+            ).exists()
+        )
+
+    @patch("vocabulary.views.generate_word_examples")
+    def test_ai_suggestions_are_saved_for_a_word(self, generate_examples):
+        generate_examples.return_value = {
+            "example_sentence": "Be careful when crossing the road.",
+            "usage_note": "Dùng để nhắc ai đó chú ý.",
+            "part_of_speech": "adjective",
+        }
+
+        response = self.client.post(
+            reverse("word_generate_ai", args=[self.word.pk])
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.word.refresh_from_db()
+        self.assertEqual(
+            self.word.example_sentence, "Be careful when crossing the road."
+        )
+        self.assertEqual(self.word.usage_note, "Dùng để nhắc ai đó chú ý.")

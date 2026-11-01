@@ -1,0 +1,46 @@
+{% extends 'vocabulary/base.html' %}
+{% block title %}Bài tập / Ôn tập{% endblock %}
+{% block content %}
+<section class="content-section practice-page">
+  <div class="section-heading">
+    <div>
+      <p class="eyebrow muted">LUYỆN TẬP MỖI NGÀY</p>
+      <h1>Bài tập / Ôn tập</h1>
+      <p class="section-description">Chọn một cách học, làm từng câu rồi xem lại kết quả.</p>
+    </div>
+  </div>
+
+  {% if not gemini_configured %}
+    <div class="ai-setup-notice" role="status">
+      Chế độ học từ mới cần cấu hình <code>GEMINI_API_KEY</code> trong file <code>.env</code> khi chạy local
+      và trong Environment của Render khi đưa lên mạng.
+    </div>
+  {% endif %}
+
+  <div class="practice-grid">
+    <article class="practice-card">
+      <span class="practice-number">01</span>
+      <p class="eyebrow muted">BỘ SƯU TẬP</p>
+      <h2>Kiểm tra từ đã lưu</h2>
+      <p>Chọn nghĩa tiếng Việt phù hợp với từ trong sổ của bạn.</p>
+      <div class="practice-card-footer"><span>{{ collection_count }} từ đã lưu</span><a class="button button-primary" href="{% url 'practice_session' 'collection' %}?restart=1">Bắt đầu →</a></div>
+    </article>
+
+    <article class="practice-card practice-card-highlight">
+      <span class="practice-number">02</span>
+      <p class="eyebrow muted">HỌC TỪ MỚI</p>
+      <h2>Khám phá từ mới</h2>
+      <p>Gemini tạo câu hỏi mới. Chọn đúng nếu bạn biết; trả lời sai thì từ được thêm vào bộ sưu tập để ôn tiếp.</p>
+      <div class="practice-card-footer"><span>5 câu mỗi lượt</span><a class="button button-primary" href="{% url 'practice_session' 'new' %}?restart=1">Bắt đầu →</a></div>
+    </article>
+
+    <article class="practice-card">
+      <span class="practice-number">03</span>
+      <p class="eyebrow muted">CẦN ÔN THÊM</p>
+      <h2>Ôn từ chưa thuộc</h2>
+      <p>Ôn lại những từ có kết quả gần nhất là “Cần ôn thêm”.</p>
+      <div class="practice-card-footer"><span>{{ unlearned_count }} từ cần ôn</span><a class="button button-primary" href="{% url 'practice_session' 'unlearned' %}?restart=1">Bắt đầu →</a></div>
+    </article>
+  </div>
+</section>
+{% endblock %}
