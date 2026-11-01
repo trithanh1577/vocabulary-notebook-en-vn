@@ -6,11 +6,11 @@
   <div class="detail-layout">
     <article class="detail-main">
       <div class="detail-label"><span class="eyebrow-dot"></span> TỪ VỰNG CỦA BẠN</div>
-      <div class="detail-title-row"><div><h1>{{ word.word }}</h1>{% if word.part_of_speech %}<span class="part-of-speech">{{ word.part_of_speech }}</span>{% endif %}</div><a class="button button-outline" href="{% url 'word_update' word.pk %}">Sửa từ</a></div>
+      <div class="detail-title-row"><div><h1>{{ word.word }}</h1>{% if word.part_of_speech %}<span class="part-of-speech">{{ word.part_of_speech }}</span>{% endif %}</div><div class="detail-actions"><a class="button button-outline" href="{% url 'word_update' word.pk %}">Sửa từ</a><form method="post" action="{% url 'word_generate_ai' word.pk %}">{% csrf_token %}<button class="button button-primary" type="submit">✦ Gợi ý bằng AI</button></form></div></div>
       <div class="meaning-block"><p class="detail-caption">NGHĨA TIẾNG VIỆT</p><p class="meaning-text">{{ word.meaning_vi|linebreaksbr }}</p></div>
       {% if word.example_sentence or word.usage_note %}
         <div class="later-feature"><p class="detail-caption">TRONG NGỮ CẢNH</p>{% if word.example_sentence %}<p>{{ word.example_sentence }}</p>{% endif %}{% if word.usage_note %}<p class="soft-note">{{ word.usage_note }}</p>{% endif %}</div>
-      {% else %}<div class="later-feature"><p class="detail-caption">GỢI Ý HỌC TẬP</p><p>Câu ví dụ và ghi chú cách dùng sẽ được bổ sung ở giai đoạn tính năng AI.</p></div>{% endif %}
+      {% else %}<div class="later-feature"><p class="detail-caption">GỢI Ý HỌC TẬP</p><p>Nhấn “Gợi ý bằng AI” để tạo câu ví dụ và ghi chú cách dùng cho từ này.</p></div>{% endif %}
       {% if word.notes %}<div class="notes-block"><p class="detail-caption">GHI CHÚ RIÊNG</p><p>{{ word.notes|linebreaksbr }}</p></div>{% endif %}
       <div class="detail-meta"><span>Thêm ngày {{ word.created_at|date:"d/m/Y" }}</span><span>·</span><span>{{ word.review_logs.count }} lần ôn tập</span></div>
     </article>

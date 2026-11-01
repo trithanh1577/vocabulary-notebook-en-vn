@@ -17,6 +17,7 @@
       </a>
       <nav class="main-nav" aria-label="Điều hướng chính">
         <a href="{% url 'word_list' %}" class="{% if request.resolver_match.url_name == 'word_list' %}active{% endif %}">Từ của tôi</a>
+        <a href="{% url 'practice_home' %}" class="{% if request.resolver_match.url_name == 'practice_home' or request.resolver_match.url_name == 'practice_session' %}active{% endif %}">Bài tập / Ôn tập</a>
         <a href="{% url 'review_list' %}" class="{% if request.resolver_match.url_name == 'review_list' %}active{% endif %}">Lịch sử ôn</a>
       </nav>
       <a class="topbar-add" href="{% url 'word_create' %}"><span aria-hidden="true">＋</span> Thêm từ</a>

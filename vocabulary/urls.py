@@ -4,8 +4,11 @@ from . import views
 
 urlpatterns = [
     path("", views.word_list, name="word_list"),
+    path("practice/", views.practice_home, name="practice_home"),
+    path("practice/<slug:mode>/", views.practice_session, name="practice_session"),
     path("words/add/", views.word_create, name="word_create"),
     path("words/<int:pk>/", views.word_detail, name="word_detail"),
+    path("words/<int:pk>/generate-ai/", views.word_generate_ai, name="word_generate_ai"),
     path("words/<int:pk>/edit/", views.word_update, name="word_update"),
     path("words/<int:pk>/delete/", views.word_delete, name="word_delete"),
     path("words/<int:pk>/reviews/add/", views.review_create, name="review_create"),
