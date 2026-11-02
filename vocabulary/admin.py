@@ -10,8 +10,9 @@ class ReviewLogInline(admin.TabularInline):
 
 @admin.register(Word)
 class WordAdmin(admin.ModelAdmin):
-    list_display = ("word", "part_of_speech", "meaning_vi", "updated_at")
-    search_fields = ("word", "meaning_vi")
+    list_display = ("word", "owner", "part_of_speech", "meaning_vi", "updated_at")
+    list_filter = ("owner",)
+    search_fields = ("word", "meaning_vi", "owner__username")
     inlines = (ReviewLogInline,)
 
 

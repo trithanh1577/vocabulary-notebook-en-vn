@@ -1,0 +1,26 @@
+{% extends 'vocabulary/base.html' %}
+{% block title %}Tạo tài khoản{% endblock %}
+{% block content %}
+<section class="auth-page">
+  <div class="form-heading">
+    <p class="eyebrow muted">WORDGARDEN</p>
+    <h1>Tạo góc học riêng.</h1>
+    <p>Mỗi tài khoản có bộ từ vựng và lịch sử ôn tập riêng.</p>
+  </div>
+  <form method="post" class="form-card auth-form">
+    {% csrf_token %}
+    {% for field in form %}
+      <div class="field-group">
+        <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %}<span class="required-mark">*</span>{% endif %}</label>
+        {{ field }}
+        {% if field.errors %}<div class="field-error">{{ field.errors|striptags }}</div>{% endif %}
+      </div>
+    {% endfor %}
+    {% if form.non_field_errors %}<div class="field-error">{{ form.non_field_errors|striptags }}</div>{% endif %}
+    <div class="form-actions">
+      <button class="button button-primary" type="submit">Tạo tài khoản <span aria-hidden="true">→</span></button>
+    </div>
+    <p class="auth-switch">Đã có tài khoản? <a href="{% url 'login' %}">Đăng nhập</a></p>
+  </form>
+</section>
+{% endblock %}
