@@ -1,5 +1,6 @@
 from unittest.mock import patch
 
+from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
 
@@ -8,7 +9,10 @@ from .models import ReviewLog, Word
 
 class VocabularyPagesTests(TestCase):
     def setUp(self):
+        self.user = User.objects.create_user(username="learner", password="anything")
+        self.client.force_login(self.user)
         self.word = Word.objects.create(
+            owner=self.user,
             word="resilient",
             part_of_speech="adjective",
             meaning_vi="kiên cường",
@@ -41,7 +45,11 @@ class VocabularyPagesTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 302)
-        self.assertTrue(Word.objects.filter(word="curious", meaning_vi="tò mò").exists())
+        self.assertTrue(
+            Word.objects.filter(
+                owner=self.user, word="curious", meaning_vi="tò mò"
+            ).exists()
+        )
 
     def test_review_can_be_saved_and_listed(self):
         response = self.client.post(
@@ -70,7 +78,10 @@ class VocabularyPagesTests(TestCase):
 
 class PracticeModeTests(TestCase):
     def setUp(self):
+        self.user = User.objects.create_user(username="learner", password="anything")
+        self.client.force_login(self.user)
         self.word = Word.objects.create(
+            owner=self.user,
             word="careful",
             part_of_speech="adjective",
             meaning_vi="cẩn thận",
@@ -83,7 +94,7 @@ class PracticeModeTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        state = self.client.session["practice_collection"]
+        state = self.client.session[f"practice_{self.user.pk}_collection"]
         answer = next(
             option for option in state["options"] if option["value"] == str(self.word.pk)
         )
@@ -131,7 +142,7 @@ class PracticeModeTests(TestCase):
             {"restart": "1"},
         )
         self.assertEqual(response.status_code, 200)
-        state = self.client.session["practice_new"]
+        state = self.client.session[f"practice_{self.user.pk}_new"]
         wrong_answer = next(option for option in state["options"] if not option["correct"])
 
         response = self.client.post(
@@ -140,7 +151,7 @@ class PracticeModeTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 302)
-        new_word = Word.objects.get(word="ponder")
+        new_word = Word.objects.get(owner=self.user, word="ponder")
         self.assertEqual(new_word.meaning_vi, "suy ngẫm")
         self.assertTrue(new_word.example_sentence)
         self.assertTrue(
