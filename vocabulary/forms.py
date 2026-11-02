@@ -1,6 +1,22 @@
 from django import forms
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.models import User
 
 from .models import ReviewLog, Word
+
+
+class RegisterForm(UserCreationForm):
+    class Meta:
+        model = User
+        fields = ("username",)
+        labels = {"username": "Tên đăng nhập"}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["password1"].label = "Mật khẩu"
+        self.fields["password1"].help_text = ""
+        self.fields["password2"].label = "Nhập lại mật khẩu"
+        self.fields["password2"].help_text = ""
 
 
 class WordForm(forms.ModelForm):

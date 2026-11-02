@@ -4,12 +4,18 @@ import time
 import uuid
 
 from django.contrib import messages
+from django.contrib.auth import login, logout
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth.models import User
+from django.db import transaction
 from django.db.models import OuterRef, Q, Subquery
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
-from .forms import ReviewLogForm, WordForm
+from .forms import RegisterForm, ReviewLogForm, WordForm
 from .gemini import GeminiServiceError, generate_new_vocabulary, generate_word_examples
 from .models import ReviewLog, Word
 
@@ -21,13 +27,68 @@ PRACTICE_MODES = {
 }
 
 
-def _words_to_review():
+def register(request):
+    if request.user.is_authenticated:
+        return redirect("word_list")
+
+    if request.method == "POST":
+        form = RegisterForm(request.POST)
+        if form.is_valid():
+            with transaction.atomic():
+                is_first_account = not User.objects.filter(
+                    is_staff=False, is_superuser=False
+                ).exists()
+                user = form.save()
+                if is_first_account:
+                    # Keep the existing single-user collection with the first account.
+                    Word.objects.filter(owner__isnull=True).update(owner=user)
+            login(request, user)
+            messages.success(request, "Tạo tài khoản thành công. Chào mừng bạn!")
+            return redirect("word_list")
+    else:
+        form = RegisterForm()
+
+    return render(request, "registration/register.html", {"form": form})
+
+
+def login_view(request):
+    if request.user.is_authenticated:
+        return redirect("word_list")
+
+    if request.method == "POST":
+        form = AuthenticationForm(request, data=request.POST)
+        if form.is_valid():
+            login(request, form.get_user())
+            next_url = request.POST.get("next") or request.GET.get("next", "")
+            if url_has_allowed_host_and_scheme(
+                next_url,
+                allowed_hosts={request.get_host()},
+                require_https=request.is_secure(),
+            ):
+                return redirect(next_url)
+            return redirect("word_list")
+    else:
+        form = AuthenticationForm(request)
+
+    return render(request, "registration/login.html", {"form": form})
+
+
+@require_POST
+def logout_view(request):
+    logout(request)
+    messages.info(request, "Bạn đã đăng xuất.")
+    return redirect("login")
+
+
+def _words_to_review(user):
     latest_result = Subquery(
         ReviewLog.objects.filter(word_id=OuterRef("pk"))
         .order_by("-reviewed_at", "-pk")
         .values("result")[:1]
     )
-    return Word.objects.annotate(latest_review_result=latest_result).filter(
+    return Word.objects.filter(owner=user).annotate(
+        latest_review_result=latest_result
+    ).filter(
         latest_review_result=ReviewLog.Result.PRACTICE
     )
 
@@ -35,16 +96,19 @@ def _words_to_review():
 def _allow_ai_request(request):
     """Prevent accidental rapid repeat calls to the free API from one session."""
     now = time.time()
-    last_request = float(request.session.get("gemini_last_request", 0))
+    session_key = f"gemini_last_request_{request.user.pk}"
+    last_request = float(request.session.get(session_key, 0))
     if now - last_request < 10:
         return False
-    request.session["gemini_last_request"] = now
+    request.session[session_key] = now
     return True
 
 
-def _word_choices(word):
+def _word_choices(word, user):
     candidates = [word]
-    candidates.extend(Word.objects.exclude(pk=word.pk).order_by("?")[:8])
+    candidates.extend(
+        Word.objects.filter(owner=user).exclude(pk=word.pk).order_by("?")[:8]
+    )
     choices = []
     seen_meanings = set()
     for candidate in candidates:
@@ -81,9 +145,10 @@ def health_check(request):
     return JsonResponse({"status": "ok"})
 
 
+@login_required
 def word_list(request):
     query = request.GET.get("q", "").strip()
-    words = Word.objects.all()
+    words = Word.objects.filter(owner=request.user)
     if query:
         words = words.filter(
             Q(word__icontains=query)
@@ -93,12 +158,17 @@ def word_list(request):
     return render(
         request,
         "vocabulary/word_list.html",
-        {"words": words, "query": query, "total_words": Word.objects.count()},
+        {
+            "words": words,
+            "query": query,
+            "total_words": Word.objects.filter(owner=request.user).count(),
+        },
     )
 
 
+@login_required
 def word_detail(request, pk):
-    word = get_object_or_404(Word, pk=pk)
+    word = get_object_or_404(Word, pk=pk, owner=request.user)
     return render(
         request,
         "vocabulary/word_detail.html",
@@ -106,9 +176,10 @@ def word_detail(request, pk):
     )
 
 
+@login_required
 @require_POST
 def word_generate_ai(request, pk):
-    word = get_object_or_404(Word, pk=pk)
+    word = get_object_or_404(Word, pk=pk, owner=request.user)
     if not _allow_ai_request(request):
         messages.error(request, "Bạn vừa gửi yêu cầu AI. Chờ vài giây rồi thử lại nhé.")
         return redirect("word_detail", pk=word.pk)
@@ -132,9 +203,11 @@ def word_generate_ai(request, pk):
     return redirect("word_detail", pk=word.pk)
 
 
+@login_required
 def word_create(request):
     if request.method == "POST":
         form = WordForm(request.POST)
+        form.instance.owner = request.user
         if form.is_valid():
             word = form.save()
             messages.success(request, f"Đã thêm từ “{word.word}”.")
@@ -144,8 +217,9 @@ def word_create(request):
     return render(request, "vocabulary/word_form.html", {"form": form, "is_edit": False})
 
 
+@login_required
 def word_update(request, pk):
-    word = get_object_or_404(Word, pk=pk)
+    word = get_object_or_404(Word, pk=pk, owner=request.user)
     if request.method == "POST":
         form = WordForm(request.POST, instance=word)
         if form.is_valid():
@@ -161,8 +235,9 @@ def word_update(request, pk):
     )
 
 
+@login_required
 def word_delete(request, pk):
-    word = get_object_or_404(Word, pk=pk)
+    word = get_object_or_404(Word, pk=pk, owner=request.user)
     if request.method == "POST":
         label = word.word
         word.delete()
@@ -171,9 +246,10 @@ def word_delete(request, pk):
     return render(request, "vocabulary/word_confirm_delete.html", {"word": word})
 
 
+@login_required
 @require_POST
 def review_create(request, pk):
-    word = get_object_or_404(Word, pk=pk)
+    word = get_object_or_404(Word, pk=pk, owner=request.user)
     form = ReviewLogForm(request.POST)
     if form.is_valid():
         review = form.save(commit=False)
@@ -185,18 +261,22 @@ def review_create(request, pk):
     return redirect("word_detail", pk=word.pk)
 
 
+@login_required
 @require_POST
 def review_delete(request, pk):
-    review = get_object_or_404(ReviewLog.objects.select_related("word"), pk=pk)
+    review = get_object_or_404(
+        ReviewLog.objects.select_related("word"), pk=pk, word__owner=request.user
+    )
     word_pk = review.word_id
     review.delete()
     messages.success(request, "Đã xóa bản ghi ôn tập.")
     return redirect("word_detail", pk=word_pk)
 
 
+@login_required
 def review_list(request):
     query = request.GET.get("q", "").strip()
-    reviews = ReviewLog.objects.select_related("word")
+    reviews = ReviewLog.objects.filter(word__owner=request.user).select_related("word")
     if query:
         reviews = reviews.filter(
             Q(word__word__icontains=query) | Q(word__meaning_vi__icontains=query)
@@ -208,13 +288,14 @@ def review_list(request):
     )
 
 
+@login_required
 def practice_home(request):
     return render(
         request,
         "vocabulary/practice_home.html",
         {
-            "collection_count": Word.objects.count(),
-            "unlearned_count": _words_to_review().count(),
+            "collection_count": Word.objects.filter(owner=request.user).count(),
+            "unlearned_count": _words_to_review(request.user).count(),
             "gemini_configured": bool(os.getenv("GEMINI_API_KEY", "").strip()),
         },
     )
@@ -222,12 +303,16 @@ def practice_home(request):
 
 def _start_practice(request, mode, session_key):
     if mode == "collection":
-        question_ids = list(Word.objects.values_list("pk", flat=True))
+        question_ids = list(
+            Word.objects.filter(owner=request.user).values_list("pk", flat=True)
+        )
         random.shuffle(question_ids)
         questions = question_ids
         pool = []
     elif mode == "unlearned":
-        question_ids = list(_words_to_review().values_list("pk", flat=True))
+        question_ids = list(
+            _words_to_review(request.user).values_list("pk", flat=True)
+        )
         random.shuffle(question_ids)
         questions = question_ids
         pool = []
@@ -242,7 +327,10 @@ def _start_practice(request, mode, session_key):
             return False
 
         saved_words = {
-            saved.casefold() for saved in Word.objects.values_list("word", flat=True)
+            saved.casefold()
+            for saved in Word.objects.filter(owner=request.user).values_list(
+                "word", flat=True
+            )
         }
         pool = [item for item in pool if item["word"].casefold() not in saved_words]
         questions = pool[:5]
@@ -270,11 +358,12 @@ def _start_practice(request, mode, session_key):
     return True
 
 
+@login_required
 def practice_session(request, mode):
     if mode not in PRACTICE_MODES:
         return redirect("practice_home")
 
-    session_key = f"practice_{mode}"
+    session_key = f"practice_{request.user.pk}_{mode}"
     state = request.session.get(session_key)
     if request.method == "GET" and (request.GET.get("restart") or not state):
         if not _start_practice(request, mode, session_key):
@@ -305,13 +394,15 @@ def practice_session(request, mode):
         part_of_speech = question["part_of_speech"]
         correct_answer = question["meaning_vi"]
     else:
-        question = Word.objects.filter(pk=questions[question_index]).first()
+        question = Word.objects.filter(
+            pk=questions[question_index], owner=request.user
+        ).first()
         if question is None:
             state["index"] += 1
             state["options"] = []
             request.session[session_key] = state
             return redirect("practice_session", mode=mode)
-        options = state.get("options") or _word_choices(question)
+        options = state.get("options") or _word_choices(question, request.user)
         question_word = question.word
         part_of_speech = question.part_of_speech
         correct_answer = question.meaning_vi
@@ -339,6 +430,7 @@ def practice_session(request, mode):
                 )
             else:
                 word, created = Word.objects.get_or_create(
+                    owner=request.user,
                     word=question_word,
                     defaults={
                         "part_of_speech": part_of_speech,
@@ -391,7 +483,7 @@ def practice_session(request, mode):
         if mode == "new":
             options = _new_word_choices(question, state["pool"])
         else:
-            options = _word_choices(question)
+            options = _word_choices(question, request.user)
         state["options"] = options
         state["token"] = uuid.uuid4().hex
         request.session[session_key] = state

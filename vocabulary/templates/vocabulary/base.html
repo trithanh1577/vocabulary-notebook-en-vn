@@ -20,7 +20,19 @@
         <a href="{% url 'practice_home' %}" class="{% if request.resolver_match.url_name == 'practice_home' or request.resolver_match.url_name == 'practice_session' %}active{% endif %}">Bài tập / Ôn tập</a>
         <a href="{% url 'review_list' %}" class="{% if request.resolver_match.url_name == 'review_list' %}active{% endif %}">Lịch sử ôn</a>
       </nav>
-      <a class="topbar-add" href="{% url 'word_create' %}"><span aria-hidden="true">＋</span> Thêm từ</a>
+      <div class="account-actions">
+        {% if user.is_authenticated %}
+          <span class="account-name">{{ user.username }}</span>
+          <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button class="account-link" type="submit">Đăng xuất</button>
+          </form>
+          <a class="topbar-add" href="{% url 'word_create' %}"><span aria-hidden="true">＋</span> Thêm từ</a>
+        {% else %}
+          <a class="account-link" href="{% url 'login' %}">Đăng nhập</a>
+          <a class="topbar-add" href="{% url 'register' %}">Tạo tài khoản</a>
+        {% endif %}
+      </div>
     </header>
 
     {% if messages %}

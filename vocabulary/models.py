@@ -1,8 +1,17 @@
+from django.conf import settings
 from django.db import models
 
 
 class Word(models.Model):
-    word = models.CharField("Từ tiếng Anh", max_length=120, unique=True)
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="vocabulary_words",
+        null=True,
+        blank=True,
+        verbose_name="Người dùng",
+    )
+    word = models.CharField("Từ tiếng Anh", max_length=120)
     part_of_speech = models.CharField("Từ loại", max_length=60, blank=True)
     meaning_vi = models.TextField("Nghĩa tiếng Việt")
     example_sentence = models.TextField("Câu ví dụ", blank=True)
@@ -15,6 +24,11 @@ class Word(models.Model):
         ordering = ["word"]
         verbose_name = "Từ vựng"
         verbose_name_plural = "Từ vựng"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["owner", "word"], name="unique_word_per_owner"
+            )
+        ]
 
     def __str__(self):
         return self.word
